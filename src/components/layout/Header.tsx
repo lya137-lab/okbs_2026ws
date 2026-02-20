@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Home, Calendar, Users, Phone, Bus, Shield, LogIn, LogOut, User, Megaphone } from "lucide-react";
+import { Menu, X, Home, Calendar, Users, Phone, Bus, Shield, LogIn, LogOut, User, Megaphone, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useParticipantAuth } from "@/hooks/useParticipantAuth";
 import logoOK from "@/assets/logo-ok-foundation.png";
@@ -28,6 +28,7 @@ const protectedNavItems: Array<{
 }> = [
   { label: "참석자", href: "#participants", icon: Users },
   { label: "버스배정", href: "/bus-assignment", icon: Bus, isLink: true },
+  { label: "조별미션", href: "/team-mission", icon: Flag, isLink: true },
 ];
 
 // 마이페이지 메뉴 (맨 우측 배치)

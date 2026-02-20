@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Lock, Users, BedDouble, Bus, Image } from "lucide-react";
+import { Lock, Users, BedDouble, Bus, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import mascotHappy from "@/assets/mascot-happy.png";
 
@@ -8,7 +8,7 @@ const protectedFeatures = [
   { icon: Users, label: "참석자 명단", description: "워크숍 참가자 정보 확인" },
   { icon: BedDouble, label: "숙소배정", description: "방 배정 및 룸메이트 확인" },
   { icon: Bus, label: "버스배정", description: "출발 장소 및 탑승 정보" },
-  { icon: Image, label: "갤러리", description: "워크숍 사진 및 추억" },
+  { icon: Flag, label: "조별미션", description: "조별 미션 안내 및 수행" },
 ];
 
 export const LoginPromptSection = () => {

@@ -14,6 +14,7 @@ import Announcements from "./pages/Announcements";
 import BusAssignment from "./pages/BusAssignment";
 import Accommodation from "./pages/Accommodation";
 import MyProfile from "./pages/MyProfile";
+import TeamMission from "./pages/TeamMission";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="/bus-assignment" element={<BusAssignment />} />
               <Route path="/accommodation" element={<Accommodation />} />
               <Route path="/profile" element={<MyProfile />} />
+              <Route path="/team-mission" element={<TeamMission />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -57,19 +57,6 @@ const getSafeBusType = (busType?: string | null): BusType => {
   return "출발";
 };
 
-interface RoomAssignment {
-  id: string;
-  building_name: string | null;
-  floor: string | null;
-  room_number: string | null;
-  room_type: string | null;
-  team: string | null;
-  name: string;
-  university: string | null;
-  major: string | null;
-  phone: string | null;
-}
-
 interface BusData {
   id: string;
   bus_number: string;
@@ -130,26 +117,10 @@ const Admin = () => {
   const { user, isAdmin, isLoading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
 
-  // Room Assignments state (room_assignments 테이블)
-  const [roomAssignments, setRoomAssignments] = useState<RoomAssignment[]>([]);
-  const [isLoadingRooms, setIsLoadingRooms] = useState(true);
   // rooms + room_members (웹사이트 숙소 배정과 동일 데이터)
   const [roomsWithMembers, setRoomsWithMembers] = useState<Array<{ id: string; building_name: string | null; room_number: string; floor: string; room_type: string; gender: string; capacity: number; room_members: Array<{ id: string; name: string; university: string | null; role: string | null; phone: string | null }> }>>([]);
   const [isLoadingRoomsWithMembers, setIsLoadingRoomsWithMembers] = useState(true);
   const [selectedRoomGroup, setSelectedRoomGroup] = useState("all");
-  const [roomDialogOpen, setRoomDialogOpen] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState<RoomAssignment | null>(null);
-  const [newRoomAssignment, setNewRoomAssignment] = useState({
-    building_name: "",
-    floor: "",
-    room_number: "",
-    room_type: "2인실",
-    team: "",
-    name: "",
-    university: "",
-    major: "",
-    phone: "",
-  });
   
   // Buses state
   const [buses, setBuses] = useState<BusData[]>([]);
@@ -261,7 +232,6 @@ const Admin = () => {
 
   useEffect(() => {
     if (user) {
-      fetchRoomAssignments();
       fetchRoomsWithMembers();
       fetchBuses();
       fetchParticipants();
@@ -308,25 +278,6 @@ const Admin = () => {
       supabase.removeChannel(channel);
     };
   }, [user]);
-
-  const fetchRoomAssignments = async () => {
-    setIsLoadingRooms(true);
-    try {
-      const { data, error } = await supabaseTable("room_assignments")
-        .select("*")
-        .order("building_name", { ascending: true })
-        .order("floor", { ascending: true })
-        .order("room_number", { ascending: true });
-
-      if (error) throw error;
-      setRoomAssignments((data as RoomAssignment[]) || []);
-    } catch (error) {
-      console.error("Error fetching room assignments:", error);
-      toast.error("방배정 데이터를 불러오는데 실패했습니다.");
-    } finally {
-      setIsLoadingRooms(false);
-    }
-  };
 
   /** 웹사이트 숙소 배정과 동일한 rooms + room_members 조회 */
   const fetchRoomsWithMembers = async () => {
@@ -608,6 +559,13 @@ const Admin = () => {
     ...roomGroupOrder.filter((key) => roomGroupKeys.includes(key)),
     ...roomGroupKeys.filter((key) => !roomGroupOrder.includes(key)),
   ];
+  const totalRoomMembers = roomsWithMembers.reduce(
+    (acc, room) => acc + (room.room_members?.length ?? 0),
+    0
+  );
+  const faqCategoryList = Array.from(new Set(faqs.map((faq) => faq.category))).sort((a, b) =>
+    a.localeCompare(b, "ko")
+  );
 
   const fetchAnnouncements = async () => {
     setIsLoadingAnnouncements(true);
@@ -1050,159 +1008,6 @@ const Admin = () => {
     setScheduleDialogOpen(true);
   };
 
-  const handleAddRoomAssignment = async () => {
-    if (!isAdmin) {
-      toast.error("관리자 권한이 필요합니다.");
-      return;
-    }
-
-    if (!newRoomAssignment.name) {
-      toast.error("성명을 입력해주세요.");
-      return;
-    }
-
-    try {
-      const { error } = await supabaseTable("room_assignments")
-        .insert([{
-          ...newRoomAssignment,
-          building_name: newRoomAssignment.building_name || null,
-          floor: newRoomAssignment.floor || null,
-          room_number: newRoomAssignment.room_number || null,
-          room_type: newRoomAssignment.room_type || null,
-          team: newRoomAssignment.team || null,
-          university: newRoomAssignment.university || null,
-          major: newRoomAssignment.major || null,
-          phone: newRoomAssignment.phone || null,
-        }]);
-
-      if (error) throw error;
-
-      toast.success("방배정이 추가되었습니다.");
-      setRoomDialogOpen(false);
-      setNewRoomAssignment({
-        building_name: "",
-        floor: "",
-        room_number: "",
-        room_type: "2인실",
-        team: "",
-        name: "",
-        university: "",
-        major: "",
-        phone: "",
-      });
-      fetchRoomAssignments();
-    } catch (error: any) {
-      console.error("Error adding room assignment:", error);
-      toast.error("방배정 추가에 실패했습니다: " + error.message);
-    }
-  };
-
-  const handleUpdateRoomAssignment = async () => {
-    if (!isAdmin || !selectedRoom) {
-      toast.error("관리자 권한이 필요합니다.");
-      return;
-    }
-
-    if (!newRoomAssignment.name) {
-      toast.error("성명을 입력해주세요.");
-      return;
-    }
-
-    try {
-      const { error } = await supabaseTable("room_assignments")
-        .update({
-          building_name: newRoomAssignment.building_name || null,
-          floor: newRoomAssignment.floor || null,
-          room_number: newRoomAssignment.room_number || null,
-          room_type: newRoomAssignment.room_type || null,
-          team: newRoomAssignment.team || null,
-          name: newRoomAssignment.name,
-          university: newRoomAssignment.university || null,
-          major: newRoomAssignment.major || null,
-          phone: newRoomAssignment.phone || null,
-        })
-        .eq("id", selectedRoom.id);
-
-      if (error) throw error;
-
-      toast.success("방배정이 수정되었습니다.");
-      setRoomDialogOpen(false);
-      setSelectedRoom(null);
-      setNewRoomAssignment({
-        building_name: "",
-        floor: "",
-        room_number: "",
-        room_type: "2인실",
-        team: "",
-        name: "",
-        university: "",
-        major: "",
-        phone: "",
-      });
-      fetchRoomAssignments();
-    } catch (error: any) {
-      console.error("Error updating room assignment:", error);
-      toast.error("방배정 수정에 실패했습니다: " + error.message);
-    }
-  };
-
-  const handleDeleteRoomAssignment = async (id: string) => {
-    if (!isAdmin) {
-      toast.error("관리자 권한이 필요합니다.");
-      return;
-    }
-
-    if (!confirm("정말 이 방배정을 삭제하시겠습니까?")) {
-      return;
-    }
-
-    try {
-      const { error } = await supabaseTable("room_assignments")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-
-      toast.success("방배정이 삭제되었습니다.");
-      fetchRoomAssignments();
-    } catch (error: any) {
-      console.error("Error deleting room assignment:", error);
-      toast.error("방배정 삭제에 실패했습니다: " + error.message);
-    }
-  };
-
-  const handleEditRoomAssignment = (assignment: RoomAssignment) => {
-    setSelectedRoom(assignment);
-    setNewRoomAssignment({
-      building_name: assignment.building_name || "",
-      floor: assignment.floor || "",
-      room_number: assignment.room_number || "",
-      room_type: assignment.room_type || "2인실",
-      team: assignment.team || "",
-      name: assignment.name,
-      university: assignment.university || "",
-      major: assignment.major || "",
-      phone: assignment.phone || "",
-    });
-    setRoomDialogOpen(true);
-  };
-
-  const handleNewRoomAssignment = () => {
-    setSelectedRoom(null);
-    setNewRoomAssignment({
-      building_name: "",
-      floor: "",
-      room_number: "",
-      room_type: "2인실",
-      team: "",
-      name: "",
-      university: "",
-      major: "",
-      phone: "",
-    });
-    setRoomDialogOpen(true);
-  };
-
   const handleAddBus = async () => {
     if (!isAdmin) {
       toast.error("관리자 권한이 필요합니다.");
@@ -1421,15 +1226,15 @@ const Admin = () => {
           <Card>
             <CardContent className="pt-6 text-center">
               <Building2 className="w-8 h-8 mx-auto mb-2 text-primary" />
-              <div className="text-3xl font-bold">{roomAssignments.length}</div>
+              <div className="text-3xl font-bold">{totalRoomMembers}</div>
               <p className="text-sm text-muted-foreground">방배정 인원</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6 text-center">
               <Users className="w-8 h-8 mx-auto mb-2 text-blue-500" />
-              <div className="text-3xl font-bold">{roomAssignments.length}</div>
-              <p className="text-sm text-muted-foreground">숙소 배정 인원</p>
+              <div className="text-3xl font-bold">{participants.length}</div>
+              <p className="text-sm text-muted-foreground">참가 인원</p>
             </CardContent>
           </Card>
           <Card>
@@ -1485,135 +1290,6 @@ const Admin = () => {
 
           {/* Rooms Tab */}
           <TabsContent value="rooms">
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <CardTitle>방배정 관리</CardTitle>
-                    <CardDescription>방배정 정보를 관리합니다</CardDescription>
-                  </div>
-                  {isAdmin && (
-                    <Button onClick={handleNewRoomAssignment}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      방배정 추가
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {isLoadingRooms ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                  </div>
-                ) : roomAssignments.length === 0 ? (
-                  roomsWithMembers.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      등록된 방배정이 없습니다. {isAdmin && "방배정을 추가해주세요."}
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>건물명</TableHead>
-                            <TableHead>호실</TableHead>
-                            <TableHead>층</TableHead>
-                            <TableHead>구분</TableHead>
-                            <TableHead>성별</TableHead>
-                            <TableHead>정원</TableHead>
-                            <TableHead>입실자</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {roomsWithMembers.map((room) => (
-                            <TableRow key={room.id}>
-                              <TableCell>{room.building_name || "-"}</TableCell>
-                              <TableCell className="font-medium">{room.room_number}</TableCell>
-                              <TableCell>{room.floor}</TableCell>
-                              <TableCell>
-                                <Badge variant="secondary">{room.room_type}</Badge>
-                              </TableCell>
-                              <TableCell>{room.gender}</TableCell>
-                              <TableCell>{room.capacity}</TableCell>
-                              <TableCell>
-                                {(room.room_members || []).map((m) => (
-                                  <div key={m.id} className="text-sm">
-                                    {m.name}
-                                    {m.university && ` · ${m.university}`}
-                                    {m.phone && ` · ${m.phone}`}
-                                  </div>
-                                ))}
-                                {(room.room_members?.length ?? 0) === 0 && (
-                                  <span className="text-muted-foreground">-</span>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>건물명</TableHead>
-                          <TableHead>층</TableHead>
-                          <TableHead>호실</TableHead>
-                          <TableHead>구분</TableHead>
-                          <TableHead>조</TableHead>
-                          <TableHead>성명</TableHead>
-                          <TableHead>학교</TableHead>
-                          <TableHead>전공</TableHead>
-                          <TableHead>연락처</TableHead>
-                          {isAdmin && <TableHead className="text-right">작업</TableHead>}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {roomAssignments.map((assignment) => (
-                          <TableRow key={assignment.id}>
-                            <TableCell>{assignment.building_name || "-"}</TableCell>
-                            <TableCell>{assignment.floor || "-"}</TableCell>
-                            <TableCell>{assignment.room_number || "-"}</TableCell>
-                            <TableCell>
-                              <Badge variant="secondary">{assignment.room_type || "-"}</Badge>
-                            </TableCell>
-                            <TableCell>{assignment.team || "-"}</TableCell>
-                            <TableCell className="font-medium">{assignment.name}</TableCell>
-                            <TableCell>{assignment.university || "-"}</TableCell>
-                            <TableCell>{assignment.major || "-"}</TableCell>
-                            <TableCell>{assignment.phone || "-"}</TableCell>
-                            {isAdmin && (
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleEditRoomAssignment(assignment)}
-                                  >
-                                    <Edit className="w-4 h-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="text-destructive hover:text-destructive"
-                                    onClick={() => handleDeleteRoomAssignment(assignment.id)}
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            )}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
             {/* 웹사이트 숙소 배정 (rooms + room_members) - Supabase 동일 데이터 */}
             <Card className="mt-6">
               <CardHeader>
@@ -1700,136 +1376,6 @@ const Admin = () => {
               </CardContent>
             </Card>
 
-            {/* Room Assignment Dialog */}
-            <Dialog open={roomDialogOpen} onOpenChange={setRoomDialogOpen}>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>
-                    {selectedRoom ? "방배정 수정" : "새 방배정 추가"}
-                  </DialogTitle>
-                  <DialogDescription>
-                    방배정 정보를 입력하세요
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="building_name">건물명</Label>
-                    <Input
-                      id="building_name"
-                      placeholder="예: 본관, 신관"
-                      value={newRoomAssignment.building_name}
-                      onChange={(e) => setNewRoomAssignment({ ...newRoomAssignment, building_name: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="floor">층</Label>
-                    <Input
-                      id="floor"
-                      placeholder="예: 1층, 2층"
-                      value={newRoomAssignment.floor}
-                      onChange={(e) => setNewRoomAssignment({ ...newRoomAssignment, floor: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="room_number">호실</Label>
-                    <Input
-                      id="room_number"
-                      placeholder="예: 101, 201"
-                      value={newRoomAssignment.room_number}
-                      onChange={(e) => setNewRoomAssignment({ ...newRoomAssignment, room_number: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>구분</Label>
-                    <Select
-                      value={newRoomAssignment.room_type}
-                      onValueChange={(value) => setNewRoomAssignment({ ...newRoomAssignment, room_type: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="2인실">2인실</SelectItem>
-                        <SelectItem value="3인실">3인실</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="team">조</Label>
-                    <Input
-                      id="team"
-                      placeholder="예: 1조, 2조"
-                      value={newRoomAssignment.team}
-                      onChange={(e) => setNewRoomAssignment({ ...newRoomAssignment, team: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="name">성명 <span className="text-destructive">*</span></Label>
-                    <Input
-                      id="name"
-                      placeholder="홍길동"
-                      value={newRoomAssignment.name}
-                      onChange={(e) => setNewRoomAssignment({ ...newRoomAssignment, name: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="university">학교</Label>
-                    <Input
-                      id="university"
-                      placeholder="예: 서울대학교"
-                      value={newRoomAssignment.university}
-                      onChange={(e) => setNewRoomAssignment({ ...newRoomAssignment, university: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="major">전공</Label>
-                    <Input
-                      id="major"
-                      placeholder="예: 컴퓨터공학과"
-                      value={newRoomAssignment.major}
-                      onChange={(e) => setNewRoomAssignment({ ...newRoomAssignment, major: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="phone">연락처</Label>
-                    <Input
-                      id="phone"
-                      placeholder="010-1234-5678"
-                      value={newRoomAssignment.phone}
-                      onChange={(e) => setNewRoomAssignment({ ...newRoomAssignment, phone: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setRoomDialogOpen(false);
-                      setSelectedRoom(null);
-                      setNewRoomAssignment({
-                        building_name: "",
-                        floor: "",
-                        room_number: "",
-                        room_type: "2인실",
-                        team: "",
-                        name: "",
-                        university: "",
-                        major: "",
-                        phone: "",
-                      });
-                    }}
-                  >
-                    취소
-                  </Button>
-                  <Button
-                    onClick={selectedRoom ? handleUpdateRoomAssignment : handleAddRoomAssignment}
-                  >
-                    {selectedRoom ? "수정" : "추가"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
           </TabsContent>
 
           {/* Participants Tab */}
@@ -2712,9 +2258,9 @@ const Admin = () => {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {["행사 기본정보", "교통 안내", "숙소 안내", "식사 및 기타", "참가 및 등록", "기타 문의"].map((category) => {
+                    {faqCategoryList.map((category) => {
                       const categoryFAQs = faqs
-                        .filter(f => f.category === category)
+                        .filter((f) => f.category === category)
                         .sort((a, b) => a.display_order - b.display_order);
 
                       if (categoryFAQs.length === 0) return null;

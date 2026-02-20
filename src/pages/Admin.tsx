@@ -290,6 +290,25 @@ const Admin = () => {
     };
   }, [user]);
 
+  // FAQ 실시간 반영
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel("faqs-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "faqs" },
+        () => {
+          fetchFAQs();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const fetchRoomAssignments = async () => {
     setIsLoadingRooms(true);
     try {
@@ -1437,7 +1456,7 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="rooms" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-6">
+          <TabsList className="flex w-full gap-2 overflow-x-auto mb-6">
             <TabsTrigger value="rooms" className="flex items-center gap-2">
               <BedDouble className="w-4 h-4" />
               숙소 배정
@@ -1487,9 +1506,53 @@ const Admin = () => {
                     <Loader2 className="w-6 h-6 animate-spin" />
                   </div>
                 ) : roomAssignments.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    등록된 방배정이 없습니다. {isAdmin && "방배정을 추가해주세요."}
-                  </div>
+                  roomsWithMembers.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      등록된 방배정이 없습니다. {isAdmin && "방배정을 추가해주세요."}
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>건물명</TableHead>
+                            <TableHead>호실</TableHead>
+                            <TableHead>층</TableHead>
+                            <TableHead>구분</TableHead>
+                            <TableHead>성별</TableHead>
+                            <TableHead>정원</TableHead>
+                            <TableHead>입실자</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {roomsWithMembers.map((room) => (
+                            <TableRow key={room.id}>
+                              <TableCell>{room.building_name || "-"}</TableCell>
+                              <TableCell className="font-medium">{room.room_number}</TableCell>
+                              <TableCell>{room.floor}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary">{room.room_type}</Badge>
+                              </TableCell>
+                              <TableCell>{room.gender}</TableCell>
+                              <TableCell>{room.capacity}</TableCell>
+                              <TableCell>
+                                {(room.room_members || []).map((m) => (
+                                  <div key={m.id} className="text-sm">
+                                    {m.name}
+                                    {m.university && ` · ${m.university}`}
+                                    {m.phone && ` · ${m.phone}`}
+                                  </div>
+                                ))}
+                                {(room.room_members?.length ?? 0) === 0 && (
+                                  <span className="text-muted-foreground">-</span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
@@ -1568,7 +1631,7 @@ const Admin = () => {
                   onValueChange={setSelectedRoomGroup}
                   className="w-full mb-4"
                 >
-                  <TabsList className="grid w-full grid-cols-4 md:grid-cols-6">
+                  <TabsList className="flex w-full gap-2 overflow-x-auto">
                     <TabsTrigger value="all">전체</TabsTrigger>
                     {sortedRoomGroupKeys.map((key) => (
                       <TabsTrigger key={key} value={key}>
@@ -2176,7 +2239,7 @@ const Admin = () => {
                   onValueChange={(value) => setSelectedBusType(getSafeBusType(value))}
                   className="w-full mb-6"
                 >
-                  <TabsList className="grid w-full grid-cols-3">
+                  <TabsList className="flex w-full gap-2 overflow-x-auto">
                     {BUS_TYPE_OPTIONS.map((busType) => (
                       <TabsTrigger key={busType} value={busType}>
                         {busType}

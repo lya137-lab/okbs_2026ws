@@ -175,62 +175,79 @@ export const ParticipantsSection = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {sortedParticipants.map((participant, index) => (
-              <motion.div
-                key={participant.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.05 }}
-                whileHover={{ y: -5 }}
-                className="bg-card rounded-2xl p-5 shadow-card hover:shadow-card-hover transition-all border border-border/50 cursor-pointer group"
-                onClick={() => fetchProfileDetail(participant.id)}
-              >
-                {/* Avatar */}
-                <div className="flex items-start gap-4 mb-4">
-                  {participant.photo_url ? (
-                    <img
-                      src={participant.photo_url}
-                      alt={participant.name}
-                      className="w-14 h-14 rounded-2xl object-cover shadow-glow/50"
-                    />
-                  ) : (
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-primary flex items-center justify-center text-2xl shadow-glow/50">
-                      {participant.name.charAt(0)}
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-foreground text-lg group-hover:text-primary transition-colors">
-                      {participant.name}
-                    </h3>
-                    <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
-                      <Building2 className="h-3.5 w-3.5 shrink-0" />
-                      <span className="truncate">
-                        {[participant.cohort, participant.university].filter(Boolean).join(" · ") || "-"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+          <>
+            {/* 모바일: 이름만 1줄 3명 */}
+            <div className="grid grid-cols-3 gap-2 sm:hidden">
+              {sortedParticipants.map((participant) => (
+                <button
+                  key={participant.id}
+                  type="button"
+                  onClick={() => fetchProfileDetail(participant.id)}
+                  className="bg-card rounded-lg border border-border/50 px-2 py-3 text-sm font-medium text-foreground hover:bg-secondary transition-colors"
+                >
+                  {participant.name}
+                </button>
+              ))}
+            </div>
 
-                {/* Info */}
-                <div className="space-y-2">
-                  {/* 조(팀) 정보 */}
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="rounded-lg font-normal">
-                      {participant.team || "STAFF"}
-                    </Badge>
+            {/* 데스크톱/태블릿 */}
+            <div className="hidden sm:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {sortedParticipants.map((participant, index) => (
+                <motion.div
+                  key={participant.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.05 }}
+                  whileHover={{ y: -5 }}
+                  className="bg-card rounded-2xl p-5 shadow-card hover:shadow-card-hover transition-all border border-border/50 cursor-pointer group"
+                  onClick={() => fetchProfileDetail(participant.id)}
+                >
+                  {/* Avatar */}
+                  <div className="flex items-start gap-4 mb-4">
+                    {participant.photo_url ? (
+                      <img
+                        src={participant.photo_url}
+                        alt={participant.name}
+                        className="w-14 h-14 rounded-2xl object-cover shadow-glow/50"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-primary flex items-center justify-center text-2xl shadow-glow/50">
+                        {participant.name.charAt(0)}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-foreground text-lg group-hover:text-primary transition-colors">
+                        {participant.name}
+                      </h3>
+                      <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
+                        <Building2 className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">
+                          {[participant.cohort, participant.university].filter(Boolean).join(" · ") || "-"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="rounded-lg font-normal">
-                      <GraduationCap className="h-3 w-3 mr-1" />
-                      {participant.major || "-"}
-                    </Badge>
+
+                  {/* Info */}
+                  <div className="space-y-2">
+                    {/* 조(팀) 정보 */}
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="rounded-lg font-normal">
+                        {participant.team || "STAFF"}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="rounded-lg font-normal">
+                        <GraduationCap className="h-3 w-3 mr-1" />
+                        {participant.major || "-"}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                </motion.div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 

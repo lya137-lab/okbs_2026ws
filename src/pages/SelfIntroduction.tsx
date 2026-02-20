@@ -507,7 +507,7 @@ const SelfIntroduction = () => {
               )}
 
               <p className="text-xs text-muted-foreground text-center">
-                JPG, PNG, GIF, WebP, HEIC 등 모든 이미지 형식 지원
+                JPG, PNG 파일만 업로드 가능합니다.
               </p>
             </div>
           </motion.div>

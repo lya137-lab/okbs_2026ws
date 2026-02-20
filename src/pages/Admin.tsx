@@ -110,6 +110,7 @@ interface ParticipantItem {
   university: string | null;
   major: string | null;
   enrollment_status: string | null;
+  has_profile: boolean;
 }
 
 interface Announcement {
@@ -381,11 +382,23 @@ const Admin = () => {
     try {
       const { data, error } = await supabase
         .from("participants")
-        .select("id, name, phone, cohort, university, major, enrollment_status")
-        .order("created_at", { ascending: true });
+        .select("id, name, phone, cohort, university, major, enrollment_status, participant_profiles(id)")
+        .order("name", { ascending: true });
 
       if (error) throw error;
-      setParticipants((data as ParticipantItem[]) || []);
+      const participantsData: ParticipantItem[] = (data || []).map((participant) => ({
+        id: participant.id,
+        name: participant.name,
+        phone: participant.phone,
+        cohort: participant.cohort || null,
+        university: participant.university || null,
+        major: participant.major || null,
+        enrollment_status: participant.enrollment_status || null,
+        has_profile: Array.isArray(participant.participant_profiles)
+          ? participant.participant_profiles.length > 0
+          : !!participant.participant_profiles,
+      }));
+      setParticipants(participantsData);
     } catch (error) {
       console.error("Error fetching participants:", error);
       toast.error("참가자 데이터를 불러오는데 실패했습니다.");
@@ -1845,6 +1858,7 @@ const Admin = () => {
                           <TableHead>학교</TableHead>
                           <TableHead>전공</TableHead>
                           <TableHead>재학여부</TableHead>
+                          <TableHead>자기소개</TableHead>
                           {isAdmin && <TableHead className="text-right">작업</TableHead>}
                         </TableRow>
                       </TableHeader>
@@ -1857,6 +1871,11 @@ const Admin = () => {
                             <TableCell>{participant.university || "-"}</TableCell>
                             <TableCell>{participant.major || "-"}</TableCell>
                             <TableCell>{participant.enrollment_status || "-"}</TableCell>
+                            <TableCell>
+                              <Badge variant={participant.has_profile ? "default" : "secondary"}>
+                                {participant.has_profile ? "등록" : "미등록"}
+                              </Badge>
+                            </TableCell>
                             {isAdmin && (
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">

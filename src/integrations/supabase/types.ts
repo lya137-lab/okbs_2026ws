@@ -214,6 +214,7 @@ export type Database = {
           id: string
           name: string
           phone: string
+          team: string | null
           cohort: string | null
           university: string | null
           major: string | null
@@ -225,6 +226,7 @@ export type Database = {
           id?: string
           name: string
           phone: string
+          team?: string | null
           cohort?: string | null
           university?: string | null
           major?: string | null
@@ -236,6 +238,7 @@ export type Database = {
           id?: string
           name?: string
           phone?: string
+          team?: string | null
           cohort?: string | null
           university?: string | null
           major?: string | null
@@ -250,6 +253,7 @@ export type Database = {
           id: string
           participant_id: string
           name: string
+          cohort: string | null
           university: string | null
           major: string | null
           birth_date: string | null
@@ -260,6 +264,8 @@ export type Database = {
           goals_2026: string | null
           foundation_activities: string | null
           photo_url: string | null
+          phone: string | null
+          enrollment_status: string | null
           created_at: string
           updated_at: string
         }
@@ -267,6 +273,7 @@ export type Database = {
           id?: string
           participant_id: string
           name: string
+          cohort?: string | null
           university?: string | null
           major?: string | null
           birth_date?: string | null
@@ -277,6 +284,8 @@ export type Database = {
           goals_2026?: string | null
           foundation_activities?: string | null
           photo_url?: string | null
+          phone?: string | null
+          enrollment_status?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -284,6 +293,7 @@ export type Database = {
           id?: string
           participant_id?: string
           name?: string
+          cohort?: string | null
           university?: string | null
           major?: string | null
           birth_date?: string | null
@@ -294,6 +304,8 @@ export type Database = {
           goals_2026?: string | null
           foundation_activities?: string | null
           photo_url?: string | null
+          phone?: string | null
+          enrollment_status?: string | null
           created_at?: string
           updated_at?: string
         }

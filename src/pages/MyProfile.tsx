@@ -51,6 +51,7 @@ const MyProfile = () => {
   const [personalForm, setPersonalForm] = useState({
     name: "",
     phone: "",
+    team: "",
     cohort: "",
     university: "",
     major: "",
@@ -86,6 +87,7 @@ const MyProfile = () => {
       setPersonalForm({
         name: participantData?.name ?? participantName ?? "",
         phone: participantData?.phone ?? participantPhone ?? "",
+        team: participantData?.team ?? "STAFF",
         cohort: participantData?.cohort ?? "",
         university: participantData?.university ?? "",
         major: participantData?.major ?? "",
@@ -178,7 +180,7 @@ const MyProfile = () => {
     if (!participantId) return;
 
     if (!personalForm.name || !personalForm.phone) {
-      // 필수값 검증
+      toast.error("이름과 연락처를 입력해주세요.");
       return;
     }
 
@@ -205,8 +207,10 @@ const MyProfile = () => {
 
       // 최신 개인정보 다시 로드
       fetchMyProfile();
+      toast.success("개인정보가 저장되었습니다.");
     } catch (error) {
       console.error("Error updating personal info:", error);
+      toast.error("개인정보 저장에 실패했습니다.");
     } finally {
       setIsSavingPersonalInfo(false);
     }
@@ -321,6 +325,15 @@ const MyProfile = () => {
                           onChange={(e) =>
                             setPersonalForm({ ...personalForm, phone: e.target.value })
                           }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="personal_team">조</Label>
+                        <Input
+                          id="personal_team"
+                          value={personalForm.team}
+                          disabled
+                          className="bg-muted"
                         />
                       </div>
                       <div className="space-y-2">

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Megaphone, Calendar, User, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -18,6 +19,8 @@ interface Announcement {
 export const AnnouncementsSection = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -69,6 +72,12 @@ export const AnnouncementsSection = () => {
     });
   };
 
+  // 공지사항 카드 클릭 시 팝업 열기
+  const handleAnnouncementClick = (announcement: Announcement): void => {
+    setSelectedAnnouncement(announcement);
+    setDialogOpen(true);
+  };
+
   return (
     <section id="announcements" className="py-20 bg-gradient-to-b from-background to-muted/30">
       <div className="container mx-auto px-4">
@@ -111,7 +120,10 @@ export const AnnouncementsSection = () => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
+                <Card
+                  className="h-full hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => handleAnnouncementClick(announcement)}
+                >
                   <CardHeader>
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <CardTitle className="text-lg line-clamp-2">
@@ -158,6 +170,34 @@ export const AnnouncementsSection = () => {
           </Link>
         </motion.div>
       </div>
+
+      {/* 공지사항 상세 팝업 */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">{selectedAnnouncement?.title}</DialogTitle>
+            <DialogDescription>
+              <div className="flex items-center gap-4 mt-2">
+                <div className="flex items-center gap-1">
+                  <User className="w-4 h-4" />
+                  <span>{selectedAnnouncement?.author}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  <span>{selectedAnnouncement && formatDate(selectedAnnouncement.created_at)}</span>
+                </div>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            <div className="prose prose-sm max-w-none">
+              <p className="whitespace-pre-wrap text-foreground">
+                {selectedAnnouncement?.content}
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };

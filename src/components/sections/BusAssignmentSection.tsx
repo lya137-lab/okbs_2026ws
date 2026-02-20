@@ -130,10 +130,10 @@ export const BusAssignmentSection = () => {
     return matchesSearch && matchesBusType;
   });
 
-  const totalPassengers = busAssignments.reduce(
-    (acc, bus) => acc + bus.passengers.length,
-    0
-  );
+  // 총 탑승자: 귀가 버스 전체 탑승 인원
+  const totalPassengers = busAssignments
+    .filter((bus) => bus.busType === "귀가")
+    .reduce((acc, bus) => acc + bus.passengers.length, 0);
 
   return (
     <section id="bus" className="py-20 bg-background">
@@ -156,9 +156,7 @@ export const BusAssignmentSection = () => {
           <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
             <CardContent className="pt-4 pb-4 text-center">
               <Bus className="w-6 h-6 text-primary mx-auto mb-2" />
-              <div className="text-2xl font-bold text-primary">
-                {busAssignments.length}
-              </div>
+              <div className="text-2xl font-bold text-primary">3</div>
               <p className="text-xs text-muted-foreground">운행 버스</p>
             </CardContent>
           </Card>

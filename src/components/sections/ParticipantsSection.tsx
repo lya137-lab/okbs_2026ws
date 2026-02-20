@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Search, GraduationCap, Building2, Sparkles, Loader2, Calendar, MapPin, Tag } from "lucide-react";
+import { Search, GraduationCap, Building2, Loader2, Calendar, MapPin, Tag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,9 +9,10 @@ import { supabase } from "@/integrations/supabase/client";
 interface Participant {
   id: string;
   name: string;
+  team: string | null;
+  cohort: string | null;
   university: string | null;
   major: string | null;
-  intro: string | null;
   photo_url: string | null;
 }
 
@@ -46,19 +47,22 @@ export const ParticipantsSection = () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
-        .from("participant_profiles")
-        .select("id, name, university, major, goals_2026, photo_url")
+        .from("participants")
+        // 기본정보는 participants에서, 사진은 participant_profiles에서 가져옴
+        .select("id, name, team, cohort, university, major, participant_profiles(photo_url)")
         .order("created_at", { ascending: true });
 
       if (error) throw error;
 
-      const participantsData: Participant[] = (data || []).map((profile) => ({
-        id: profile.id,
-        name: profile.name,
-        university: profile.university || null,
-        major: profile.major || null,
-        intro: profile.goals_2026 || null,
-        photo_url: profile.photo_url || null,
+      // participants 테이블 기준 데이터 구성
+      const participantsData: Participant[] = (data || []).map((participant) => ({
+        id: participant.id,
+        name: participant.name,
+        team: participant.team || null,
+        cohort: participant.cohort || null,
+        university: participant.university || null,
+        major: participant.major || null,
+        photo_url: participant.participant_profiles?.photo_url || null,
       }));
 
       setParticipants(participantsData);
@@ -70,7 +74,7 @@ export const ParticipantsSection = () => {
   };
 
   // 프로필 상세 정보 조회 (팝업용)
-  const fetchProfileDetail = async (profileId: string): Promise<void> => {
+  const fetchProfileDetail = async (participantId: string): Promise<void> => {
     try {
       setIsProfileLoading(true);
       const { data, error } = await supabase
@@ -78,7 +82,7 @@ export const ParticipantsSection = () => {
         .select(
           "id, name, university, major, birth_date, location, mbti, keywords, specialty, goals_2026, foundation_activities, photo_url"
         )
-        .eq("id", profileId)
+        .eq("participant_id", participantId)
         .maybeSingle();
 
       if (error) throw error;
@@ -96,9 +100,28 @@ export const ParticipantsSection = () => {
   const filteredParticipants = participants.filter(
     (p) =>
       p.name.includes(searchQuery) ||
+      (p.team && p.team.includes(searchQuery)) ||
+      (p.cohort && p.cohort.includes(searchQuery)) ||
       (p.university && p.university.includes(searchQuery)) ||
       (p.major && p.major.includes(searchQuery))
   );
+
+  // 조별 정렬 + 가나다순 정렬 (STAFF는 마지막)
+  const teamOrderValue = (team: string | null): number => {
+    if (!team || team.toUpperCase() === "STAFF") return Number.MAX_SAFE_INTEGER;
+    const match = team.match(/\d+/);
+    return match ? parseInt(match[0], 10) : Number.MAX_SAFE_INTEGER - 1;
+  };
+
+  const sortedParticipants = [...filteredParticipants].sort((a, b) => {
+    const teamA = teamOrderValue(a.team);
+    const teamB = teamOrderValue(b.team);
+    if (teamA !== teamB) return teamA - teamB;
+    const teamNameA = a.team || "STAFF";
+    const teamNameB = b.team || "STAFF";
+    if (teamNameA !== teamNameB) return teamNameA.localeCompare(teamNameB, "ko");
+    return a.name.localeCompare(b.name, "ko");
+  });
 
   return (
     <section id="participants" className="py-20 bg-secondary/30">
@@ -132,7 +155,7 @@ export const ParticipantsSection = () => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="이름, 학교, 전공으로 검색..."
+              placeholder="이름, 조, 기수, 학교, 전공으로 검색..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-12 py-6 rounded-2xl bg-card border-border/50 text-base"
@@ -153,7 +176,7 @@ export const ParticipantsSection = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredParticipants.map((participant, index) => (
+            {sortedParticipants.map((participant, index) => (
               <motion.div
                 key={participant.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -181,31 +204,29 @@ export const ParticipantsSection = () => {
                     <h3 className="font-bold text-foreground text-lg group-hover:text-primary transition-colors">
                       {participant.name}
                     </h3>
-                    {participant.university && (
-                      <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
-                        <Building2 className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate">{participant.university}</span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
+                      <Building2 className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">
+                        {[participant.cohort, participant.university].filter(Boolean).join(" · ") || "-"}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Info */}
                 <div className="space-y-2">
-                  {participant.major && (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="rounded-lg font-normal">
-                        <GraduationCap className="h-3 w-3 mr-1" />
-                        {participant.major}
-                      </Badge>
-                    </div>
-                  )}
-                  {participant.intro && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      <Sparkles className="inline h-3.5 w-3.5 mr-1 text-accent" />
-                      {participant.intro}
-                    </p>
-                  )}
+                  {/* 조(팀) 정보 */}
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="rounded-lg font-normal">
+                      {participant.team || "STAFF"}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="rounded-lg font-normal">
+                      <GraduationCap className="h-3 w-3 mr-1" />
+                      {participant.major || "-"}
+                    </Badge>
+                  </div>
                 </div>
               </motion.div>
             ))}

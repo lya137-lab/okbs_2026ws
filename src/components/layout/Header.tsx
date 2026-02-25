@@ -28,7 +28,7 @@ const protectedNavItems: Array<{
 }> = [
   { label: "참석자", href: "#participants", icon: Users },
   { label: "버스배정", href: "/bus-assignment", icon: Bus, isLink: true },
-  { label: "조별미션", href: "/team-mission", icon: Flag, isLink: true },
+  { label: "조별미션", href: "https://mission-bingo.vercel.app/", icon: Flag, isLink: true },
 ];
 
 // 마이페이지 메뉴 (맨 우측 배치)
@@ -62,14 +62,26 @@ export const Header = () => {
             {/* Desktop Navigation: 해시(#) 링크는 메인(/)으로 이동 후 앵커 적용 */}
             <nav className="hidden md:flex items-center gap-1">
               {navItems.map((item) => {
+                const isExternal = item.href.startsWith("http");
                 const isHashLink = item.href.startsWith("#");
                 const to = isHashLink ? `/${item.href}` : item.href;
+                const className =
+                  "px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors";
+                if (isExternal) {
+                  return (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={className}
+                    >
+                      {item.label}
+                    </a>
+                  );
+                }
                 return (
-                  <Link
-                    key={item.href}
-                    to={to}
-                    className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
-                  >
+                  <Link key={item.href} to={to} className={className}>
                     {item.label}
                   </Link>
                 );
@@ -166,14 +178,32 @@ export const Header = () => {
               <div className="grid grid-cols-3 gap-2">
                 {navItems.map((item) => {
                   const Icon = item.icon;
+                  const isExternal = item.href.startsWith("http");
                   const isHashLink = item.href.startsWith("#");
                   const to = isHashLink ? `/${item.href}` : item.href;
+                  const className =
+                    "flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-secondary transition-colors";
+                  if (isExternal) {
+                    return (
+                      <a
+                        key={item.href}
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setIsOpen(false)}
+                        className={className}
+                      >
+                        <Icon className="h-5 w-5 text-primary" />
+                        <span className="text-xs font-medium">{item.label}</span>
+                      </a>
+                    );
+                  }
                   return (
                     <Link
                       key={item.href}
                       to={to}
                       onClick={() => setIsOpen(false)}
-                      className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-secondary transition-colors"
+                      className={className}
                     >
                       <Icon className="h-5 w-5 text-primary" />
                       <span className="text-xs font-medium">{item.label}</span>
